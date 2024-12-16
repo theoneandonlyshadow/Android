@@ -35,7 +35,7 @@ function hideContent() {
     hideButton.style.opacity = '0.0';
 
     const img = document.createElement('img');
-    img.src = './Screenshot 2024-12-16 020614.png';
+    img.src = './Images/androidide.jpg';
     img.style.position = 'fixed';
     img.style.top = '0';
     img.style.left = '0';
