@@ -1,0 +1,1484 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bru</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+
+<body>
+  <h1>View in Full Screen (F11)</h1>
+  <button id="hideButton" onclick="hideContent()" style="position: absolute; top: 20px; right: 20px;">Hide All (Can be
+    used only once!<br> Reload to view again)</button>
+  <div class="program">
+    <div class="header" onclick="toggleProgram(this)">
+      <span class="arrow">▶</span> Textile Shop Billing App
+    </div>
+    <div class="content">
+      <pre>
+              <h3>Activity.xml</h3>
+              <button onclick="copyToClipboard('activityXml')">Copy</button>
+              <code id="activityXml" class="language-xml">
+                <br>
+                &lt;?xml version="1.0" encoding="utf-8"?&gt;
+                &lt;ScrollView xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;
+                android:layout_width=&quot;match_parent&quot;
+                android:layout_height=&quot;match_parent&quot;
+                android:padding=&quot;16dp&quot;&gt;
+                &lt;LinearLayout android:orientation=&quot;vertical&quot;
+                android:layout_width=&quot;match_parent&quot;
+                android:layout_height=&quot;wrap_content&quot;&gt;
+                &lt;EditText android:id=&quot;@+id/customerName&quot;
+                android:hint=&quot;Customer Name&quot; android:layout_width=&quot;match_parent&quot;
+                android:layout_height=&quot;wrap_content&quot;/&gt;
+                &lt;EditText android:id=&quot;@+id/mobileNumber&quot;
+                android:hint=&quot;Mobile Number&quot; android:layout_width=&quot;match_parent&quot;
+                android:layout_height=&quot;wrap_content&quot;/&gt;
+                &lt;EditText android:id=&quot;@+id/totalAmount&quot;
+                android:hint=&quot;Total Amount&quot; android:layout_width=&quot;match_parent&quot;
+                android:layout_height=&quot;wrap_content&quot;/&gt;
+                &lt;Button android:id=&quot;@+id/saveButton&quot;
+                android:text=&quot;Save Bill&quot; android:layout_width=&quot;wrap_content&quot;
+                android:layout_height=&quot;wrap_content&quot;/&gt;
+                &lt;Button android:id=&quot;@+id/viewAllButton&quot;
+                android:text=&quot;View All Bills&quot; android:layout_width=&quot;wrap_content&quot;
+                android:layout_height=&quot;wrap_content&quot;/&gt;
+                &lt;Button android:id=&quot;@+id/viewTotalButton&quot;
+                android:text=&quot;View Total Amount&quot; android:layout_width=&quot;wrap_content&quot;
+                android:layout_height=&quot;wrap_content&quot;/&gt;
+                &lt;EditText android:id=&quot;@+id/searchBillId&quot;
+                android:hint=&quot;Search Bill Number&quot; android:layout_width=&quot;match_parent&quot;
+                android:layout_height=&quot;wrap_content&quot;/&gt;
+                &lt;Button android:id=&quot;@+id/searchBillButton&quot;
+                android:text=&quot;Search Bill&quot; android:layout_width=&quot;wrap_content&quot;
+                android:layout_height=&quot;wrap_content&quot;/&gt;
+                &lt;Button android:id=&quot;@+id/totalCustomersButton&quot;
+                android:text=&quot;View Total Customers&quot; android:layout_width=&quot;wrap_content&quot;
+                android:layout_height=&quot;wrap_content&quot;/&gt;
+                &lt;TextView android:id=&quot;@+id/resultView&quot;
+                android:layout_width=&quot;match_parent&quot;
+                android:layout_height=&quot;wrap_content&quot;/&gt;
+                &lt;/LinearLayout&gt;
+                &lt;/ScrollView&gt;
+            </code>
+            <h3>MainActivity.java</h3>
+            <button onclick="copyToClipboard('mainActivity')">Copy</button>
+            <code id="mainActivity" class="language-java">
+              package com.example.textileshopbilling;
+              import android.database.Cursor;
+              import android.os.Bundle;
+              import android.view.View;
+              import android.widget.Button;
+              import android.widget.EditText;
+              import android.widget.TextView;
+              import android.widget.Toast;
+              import androidx.appcompat.app.AppCompatActivity;
+              public class MainActivity extends AppCompatActivity {
+              EditText customerName, mobileNumber, totalAmount, searchBillId;
+              Button saveButton, viewAllButton, viewTotalButton, searchBillButton, totalCustomersButton;
+              TextView resultView;
+              DatabaseHelper db;
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+              super.onCreate(savedInstanceState);
+              setContentView(R.layout.activity_main);
+              // Initialize UI components
+              customerName = findViewById(R.id.customerName);
+              mobileNumber = findViewById(R.id.mobileNumber);
+              totalAmount = findViewById(R.id.totalAmount);
+              searchBillId = findViewById(R.id.searchBillId);
+              saveButton = findViewById(R.id.saveButton);
+              viewAllButton = findViewById(R.id.viewAllButton);
+              viewTotalButton = findViewById(R.id.viewTotalButton);
+              searchBillButton = findViewById(R.id.searchBillButton);
+              totalCustomersButton = findViewById(R.id.totalCustomersButton);
+              resultView = findViewById(R.id.resultView);
+              db = new DatabaseHelper(this);
+              // Save billing details
+              saveButton.setOnClickListener(view -> {
+              String name = customerName.getText().toString();
+              String mobile = mobileNumber.getText().toString();
+              double amount = Double.parseDouble(totalAmount.getText().toString());
+              boolean success = db.insertBillingDetails(name, mobile, amount);
+              Toast.makeText(MainActivity.this, success ? "Bill Saved" : "Error Saving Bill", Toast.LENGTH_SHORT).show();
+              });
+              // View all billing details
+              viewAllButton.setOnClickListener(view -> {
+              Cursor cursor = db.getAllBillingDetails();
+              StringBuilder result = new StringBuilder("All Billing Details:\n");
+              while (cursor.moveToNext()) {
+              result.append("Bill No: ").append(cursor.getInt(0))
+              .append(", Name: ").append(cursor.getString(1))
+              .append(", Mobile: ").append(cursor.getString(2))
+              .append(", Amount: $").append(cursor.getDouble(3))
+              .append("\n");
+              }
+              resultView.setText(result.toString());
+              });
+              // View total amount billed
+              viewTotalButton.setOnClickListener(view -> {
+              Cursor cursor = db.getTotalAmountBilled();
+              if (cursor.moveToFirst()) {
+              resultView.setText("Total Amount Billed: $" + cursor.getDouble(0));
+              }
+              });
+              // Search by bill number
+              searchBillButton.setOnClickListener(view -> {
+              int billId = Integer.parseInt(searchBillId.getText().toString());
+              Cursor cursor = db.getBillingByBillNumber(billId);
+              if (cursor.moveToFirst()) {
+              String result = "Bill No: " + cursor.getInt(0) + "\n" +
+              "Name: " + cursor.getString(1) + "\n" +
+              "Mobile: " + cursor.getString(2) + "\n" +
+              "Amount: $" + cursor.getDouble(3);
+              resultView.setText(result);
+              } else {
+              resultView.setText("No record found for Bill No: " + billId);
+              }
+              });
+              // Get total customers count
+              totalCustomersButton.setOnClickListener(view -> {
+              Cursor cursor = db.getTotalCustomerCount();
+              if (cursor.moveToFirst()) {
+              resultView.setText("Total Registered Customers: " + cursor.getInt(0));
+              }
+              });
+              }
+              }
+            </code>
+            <h3>DatabaseHelper.java</h3>
+            <button onclick="copyToClipboard('DBHelper')">Copy</button>
+            <code id='DBHelper' class="language-java">
+              package com.example.textileshopbilling;
+              import android.content.ContentValues;
+              import android.content.Context;
+              import android.database.Cursor;
+              import android.database.sqlite.SQLiteDatabase;
+              import android.database.sqlite.SQLiteOpenHelper;
+              public class DatabaseHelper extends SQLiteOpenHelper {
+              // Database name and table details
+              private static final String DATABASE_NAME = "TextileShop.db";
+              private static final String TABLE_NAME = "billing";
+              private static final String COL_BILL_ID = "bill_id";
+              private static final String COL_CUSTOMER_NAME = "customer_name";
+              private static final String COL_MOBILE = "mobile_number";
+              private static final String COL_AMOUNT = "total_amount";
+              public DatabaseHelper(Context context) {
+              super(context, DATABASE_NAME, null, 1);
+              }
+              @Override
+              public void onCreate(SQLiteDatabase db) {
+              String createTable = "CREATE TABLE " + TABLE_NAME + " (" +
+              COL_BILL_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+              COL_CUSTOMER_NAME + " TEXT, " +
+              COL_MOBILE + " TEXT, " +
+              COL_AMOUNT + " REAL)";
+              db.execSQL(createTable);
+              }
+              @Override
+              public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+              db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
+              onCreate(db);
+              }
+              // Insert billing details
+              public boolean insertBillingDetails(String name, String mobile, double amount) {
+              SQLiteDatabase db = this.getWritableDatabase();
+              ContentValues values = new ContentValues();
+              values.put(COL_CUSTOMER_NAME, name);
+              values.put(COL_MOBILE, mobile);
+              values.put(COL_AMOUNT, amount);
+              long result = db.insert(TABLE_NAME, null, values);
+              return result != -1; // Return true if insert is successful
+              }
+              // Fetch all billing details
+              public Cursor getAllBillingDetails() {
+              SQLiteDatabase db = this.getReadableDatabase();
+              return db.rawQuery("SELECT * FROM " + TABLE_NAME, null);
+              }
+              // Get total amount billed
+              public Cursor getTotalAmountBilled() {
+              SQLiteDatabase db = this.getReadableDatabase();
+              return db.rawQuery("SELECT SUM(" + COL_AMOUNT + ") AS TotalAmount FROM " + TABLE_NAME, null);
+              }
+              // Get details by bill number
+              public Cursor getBillingByBillNumber(int billId) {
+              SQLiteDatabase db = this.getReadableDatabase();
+              return db.rawQuery("SELECT * FROM " + TABLE_NAME + " WHERE " + COL_BILL_ID + " = ?", new
+              String[]{String.valueOf(billId)});
+              }
+              // Get total number of customers
+              public Cursor getTotalCustomerCount() {
+              SQLiteDatabase db = this.getReadableDatabase();
+              return db.rawQuery("SELECT COUNT(DISTINCT " + COL_MOBILE + ") AS TotalCustomers FROM " + TABLE_NAME, null);
+              }
+              }
+            </code>
+            <h3>Output</h3>
+            <img src="./Images/textile.png"><img src="./Images/textileres.png">
+            </pre>
+    </div>
+  </div>
+
+  <div class="program">
+    <div class="header" onclick="toggleProgram(this)">
+      <span class="arrow">▶</span> Bike Showroom Booking App
+    </div>
+    <div class="content">
+      <pre>
+            <h3>activity_main.xml</h3>
+            <button onclick="copyToClipboard('activityMain')">Copy</button>
+            <code id="activityMaini" class="language-xml">
+              &lt;?xml version="1.0" encoding="utf-8"?&gt;
+              &lt;LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:padding="16dp"&gt;
+                  &lt;EditText
+                  android:id="@+id/etCustomerName"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:hint="Customer Name" /&gt;
+                  &lt;EditText
+                  android:id="@+id/etAmountPaid"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:hint="Amount Paid"
+                  android:inputType="numberDecimal" /&gt;
+                  &lt;Spinner
+                  android:id="@+id/spinnerBankNames"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content" /&gt;
+                  &lt;EditText
+                  android:id="@+id/etTransactionId"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:hint="Transaction ID" /&gt;
+                  &lt;Button
+                  android:id="@+id/btnBook"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:text="Book" /&gt;
+                  &lt;Button
+                  android:id="@+id/btnViewBookings"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:text="Previous Bookings" /&gt;
+                  &lt;Button
+                  android:id="@+id/btnTotalAmount"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:text="Total Amount" /&gt;
+                  &lt;Button
+                  android:id="@+id/btnFindByTransaction"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:text="Find Transaction" /&gt;
+                  &lt;Button
+                  android:id="@+id/btnTotalBikes"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:text="Total Bikes Booked" /&gt;
+                  &lt;TextView
+                  android:id="@+id/tvResult"
+                  android:layout_width="match_parent"
+                  android:layout_height="239dp"
+                  android:textColor="#000000"
+                  android:textSize="16sp" /&gt;
+              &lt;/LinearLayout&gt;
+            </code>
+            <h3>MainActivity.java</h3>
+            <button onclick="copyToClipboard('mainActivity1')">Copy</button>
+            <code id="mainActivity1" class="language-java">
+              package com.example.end2;
+  
+              import android.database.Cursor;
+              import android.os.Bundle;
+              import android.view.View;
+              import android.widget.ArrayAdapter;
+              import android.widget.Button;
+              import android.widget.EditText;
+              import android.widget.Spinner;
+              import android.widget.TextView;
+              import androidx.appcompat.app.AppCompatActivity;
+  
+              public class MainActivity extends AppCompatActivity {
+                  EditText etCustomerName, etAmountPaid, etTransactionId;
+                  Spinner spinnerBankNames;
+                  TextView tvResult;
+                  DBHelper dbHelper;
+  
+                  @Override
+                  protected void onCreate(Bundle savedInstanceState) {
+                      super.onCreate(savedInstanceState);
+                      setContentView(R.layout.activity_main);
+                      
+                      // Initialize views
+                      etCustomerName = findViewById(R.id.etCustomerName);
+                      etAmountPaid = findViewById(R.id.etAmountPaid);
+                      etTransactionId = findViewById(R.id.etTransactionId);
+                      spinnerBankNames = findViewById(R.id.spinnerBankNames);
+                      tvResult = findViewById(R.id.tvResult);
+                      
+                      Button btnBook = findViewById(R.id.btnBook);
+                      Button btnViewBookings = findViewById(R.id.btnViewBookings);
+                      Button btnTotalAmount = findViewById(R.id.btnTotalAmount);
+                      Button btnFindByTransaction = findViewById(R.id.btnFindByTransaction);
+                      Button btnTotalBikes = findViewById(R.id.btnTotalBikes);
+                      dbHelper = new DBHelper(this);
+                      
+                      // Spinner setup for bank names
+                      String[] bankNames = {"HDFC Bank", "ICICI Bank", "SBI", "Axis Bank", "Kotak Bank"};
+                      ArrayAdapter&lt;String&gt; adapter = new ArrayAdapter&lt;&gt;(this, android.R.layout.simple_spinner_item, bankNames);
+                      adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                      spinnerBankNames.setAdapter(adapter);
+                      
+                      // Button actions
+                      btnBook.setOnClickListener(v -> {
+                          String name = etCustomerName.getText().toString();
+                          String amount = etAmountPaid.getText().toString();
+                          String transactionId = etTransactionId.getText().toString();
+                          String bank = spinnerBankNames.getSelectedItem().toString();
+                          
+                          if (name.isEmpty() || amount.isEmpty() || transactionId.isEmpty()) {
+                              tvResult.setText("Please fill all fields");
+                              return;
+                          }
+                          
+                          if (dbHelper.insertBooking(name, bank, Double.parseDouble(amount), transactionId)) {
+                              tvResult.setText("Booking successful!");
+                          } else {
+                              tvResult.setText("Error: Booking failed.");
+                          }
+                      });
+                      
+                      btnViewBookings.setOnClickListener(v -> {
+                          Cursor cursor = dbHelper.getAllBookings();
+                          StringBuilder builder = new StringBuilder();
+                          if (cursor.moveToFirst()) {
+                              do {
+                                  builder.append("Name: ").append(cursor.getString(0))
+                                         .append(", Bank: ").append(cursor.getString(1))
+                                         .append(", Amount: ").append(cursor.getDouble(2))
+                                         .append(", Transaction: ").append(cursor.getString(3))
+                                         .append("\n");
+                              } while (cursor.moveToNext());
+                              tvResult.setText(builder.toString());
+                          } else {
+                              tvResult.setText("No bookings found.");
+                          }
+                      });
+                      
+                      btnTotalAmount.setOnClickListener(v -> {
+                          double totalAmount = dbHelper.getTotalAmount();
+                          tvResult.setText("Total Amount Paid: ₹" + totalAmount);
+                      });
+                      
+                      btnFindByTransaction.setOnClickListener(v -> {
+                          String transactionId = etTransactionId.getText().toString();
+                          if (transactionId.isEmpty()) {
+                              tvResult.setText("Enter a transaction ID.");
+                              return;
+                          }
+                          
+                          Cursor cursor = dbHelper.getBookingByTransactionId(transactionId);
+                          if (cursor.moveToFirst()) {
+                              String result = "Customer: " + cursor.getString(0) +
+                                              ", Amount: ₹" + cursor.getDouble(1);
+                              tvResult.setText(result);
+                          } else {
+                              tvResult.setText("No booking found for Transaction ID: " + transactionId);
+                          }
+                      });
+                      
+                      btnTotalBikes.setOnClickListener(v -> {
+                          int totalBikes = dbHelper.getTotalBikesBooked();
+                          tvResult.setText("Total Bikes Booked: " + totalBikes);
+                      });
+                  }
+              }
+            </code>
+            <h3>DBHelper.java</h3>
+            <button onclick="copyToClipboard('DBHelper1')">Copy</button>
+            <code id="DBHelper1" class="language-java">
+              package com.example.end2;
+  
+              import android.content.ContentValues;
+              import android.content.Context;
+              import android.database.Cursor;
+              import android.database.sqlite.SQLiteDatabase;
+              import android.database.sqlite.SQLiteOpenHelper;
+  
+              public class DBHelper extends SQLiteOpenHelper {
+                  private static final String DATABASE_NAME = "BikeShowroom.db";
+                  private static final int DATABASE_VERSION = 1;
+  
+                  public DBHelper(Context context) {
+                      super(context, DATABASE_NAME, null, DATABASE_VERSION);
+                  }
+  
+                  @Override
+                  public void onCreate(SQLiteDatabase db) {
+                      String createTable = "CREATE TABLE Bookings (" +
+                                           "customer_name TEXT, " +
+                                           "bank_name TEXT, " +
+                                           "amount_paid REAL, " +
+                                           "transaction_id TEXT PRIMARY KEY)";
+                      db.execSQL(createTable);
+                  }
+  
+                  @Override
+                  public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+                      db.execSQL("DROP TABLE IF EXISTS Bookings");
+                      onCreate(db);
+                  }
+  
+                  public boolean insertBooking(String customerName, String bankName, double amountPaid, String transactionId) {
+                      SQLiteDatabase db = this.getWritableDatabase();
+                      ContentValues values = new ContentValues();
+                      values.put("customer_name", customerName);
+                      values.put("bank_name", bankName);
+                      values.put("amount_paid", amountPaid);
+                      values.put("transaction_id", transactionId);
+                      long result = db.insert("Bookings", null, values);
+                      return result != -1;
+                  }
+  
+                  public Cursor getAllBookings() {
+                      SQLiteDatabase db = this.getReadableDatabase();
+                      return db.rawQuery("SELECT * FROM Bookings", null);
+                  }
+  
+                  public double getTotalAmount() {
+                      SQLiteDatabase db = this.getReadableDatabase();
+                      Cursor cursor = db.rawQuery("SELECT SUM(amount_paid) FROM Bookings", null);
+                      if (cursor.moveToFirst()) {
+                          return cursor.getDouble(0);
+                      }
+                      return 0.0;
+                  }
+  
+                  public Cursor getBookingByTransactionId(String transactionId) {
+                      SQLiteDatabase db = this.getReadableDatabase();
+                      return db.rawQuery("SELECT customer_name, amount_paid FROM Bookings WHERE transaction_id = ?",
+                              new String[]{transactionId});
+                  }
+  
+                  public int getTotalBikesBooked() {
+                      SQLiteDatabase db = this.getReadableDatabase();
+                      Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM Bookings", null);
+                      if (cursor.moveToFirst()) {
+                          return cursor.getInt(0);
+                      }
+                      return 0;
+                  }
+              }
+            </code>
+            <h3>Output</h3>
+            <img src="./Images/bike.jpg"> <img src="./Images/bikeres.jpg">
+          </pre>
+    </div>
+  </div>
+
+
+  <div class="program">
+    <div class="header" onclick="toggleProgram(this)">
+      <span class="arrow">▶</span> Attendance App
+    </div>
+    <div class="content">
+      <pre>
+              <h3>Main Design File (activity_main.xml)</h3>
+              <button onclick="copyToClipboard('attendanceMainXmlbru')">Copy</button>
+              <code id="attendanceMainXmlbru" class="language-xml">
+                &lt;?xml version="1.0" encoding="utf-8"?&gt;
+                  &lt;ScrollView xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;
+                  android:layout_width=&quot;match_parent&quot;
+                  android:layout_height=&quot;match_parent&quot;&gt;
+                  &lt;LinearLayout
+                  android:layout_width=&quot;match_parent&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:orientation=&quot;vertical&quot;
+                  android:padding=&quot;16dp&quot;&gt;
+                  &lt;TextView
+                  android:layout_width=&quot;wrap_content&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:text=&quot;Attendance&quot;
+                  android:textSize=&quot;20sp&quot;
+                  android:textStyle=&quot;bold&quot;
+                  android:gravity=&quot;center&quot;
+                  android:layout_gravity=&quot;center&quot; /&gt;
+                  &lt;TextView
+                  android:layout_width=&quot;wrap_content&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:text=&quot;ID:&quot; /&gt;
+                  &lt;EditText
+                  android:id=&quot;@+id/etFacultyId&quot;
+                  android:layout_width=&quot;match_parent&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:hint=&quot;Enter Faculty ID&quot; /&gt;
+                  &lt;TextView
+                  android:layout_width=&quot;wrap_content&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:text=&quot;Course Name:&quot; /&gt;
+                  &lt;AutoCompleteTextView
+                  android:id=&quot;@+id/actvCourseName&quot;
+                  android:layout_width=&quot;match_parent&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:hint=&quot;Choose Course Name&quot; /&gt;
+                  &lt;TextView
+                  android:layout_width=&quot;wrap_content&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:text=&quot;No. of Students:&quot; /&gt;
+                  &lt;EditText
+                  android:id=&quot;@+id/etNoOfStudents&quot;
+                  android:layout_width=&quot;match_parent&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:inputType=&quot;number&quot;
+                  android:hint=&quot;Enter Number of Students&quot; /&gt;
+                  &lt;TextView
+                  android:layout_width=&quot;wrap_content&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:text=&quot;Date:&quot; /&gt;
+                  &lt;EditText
+                  android:id=&quot;@+id/etDate&quot;
+                  android:layout_width=&quot;match_parent&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:focusable=&quot;false&quot;
+                  android:hint=&quot;Select Date&quot;
+                  android:drawableEnd=&quot;@android:drawable/ic_menu_today&quot; /&gt;
+                  &lt;Button
+                  android:id=&quot;@+id/btnSubmit&quot;
+                  android:layout_width=&quot;match_parent&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:text=&quot;SUBMIT&quot; /&gt;
+                  &lt;View
+                  android:layout_width=&quot;match_parent&quot;
+                  android:layout_height=&quot;2dp&quot;
+                  android:background=&quot;#CCCCCC&quot;
+                  android:layout_marginVertical=&quot;16dp&quot; /&gt;
+                  &lt;TextView
+                  android:layout_width=&quot;wrap_content&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:text=&quot;Show Attendance&quot;
+                  android:textSize=&quot;18sp&quot;
+                  android:textStyle=&quot;bold&quot; /&gt;
+                  &lt;TextView
+                  android:layout_width=&quot;wrap_content&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  &lt;TextView
+                  android:layout_width=&quot;wrap_content&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:text=&quot;Date:&quot; /&gt;
+                  &lt;EditText
+                  android:id=&quot;@+id/etSearchDate&quot;
+                  android:layout_width=&quot;match_parent&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:focusable=&quot;false&quot;
+                  android:hint=&quot;Select Date&quot;
+                  android:drawableEnd=&quot;@android:drawable/ic_menu_today&quot; /&gt;
+                  &lt;TextView
+                  android:layout_width=&quot;wrap_content&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:text=&quot;Course Name:&quot; /&gt;
+                  &lt;EditText
+                  android:id=&quot;@+id/etSearchCourse&quot;
+                  android:layout_width=&quot;match_parent&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:hint=&quot;Enter Course Name&quot; /&gt;
+                  &lt;Button
+                  android:id=&quot;@+id/btnShowAttendance&quot;
+                  android:layout_width=&quot;match_parent&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:text=&quot;SHOW ATTENDANCE&quot; /&gt;
+                  &lt;/LinearLayout&gt;
+                  &lt;/ScrollView&gt;
+              </code>
+              <h3>MainActivity.java</h3>
+              <button onclick="copyToClipboard('attendanceMainActivity')">Copy</button>
+              <code id="attendanceMainActivity" class="language-java">
+                  package com.example.end3;
+                  import android.app.DatePickerDialog;
+                  import android.content.Intent;
+                  import android.os.Bundle;
+                  import android.view.View;
+                  import android.widget.ArrayAdapter;
+                  import android.widget.AutoCompleteTextView;
+                  import android.widget.Button;
+                  import android.widget.DatePicker;
+                  import android.widget.EditText;
+                  import android.widget.Toast;
+                  import androidx.appcompat.app.AppCompatActivity;
+                  import java.util.Calendar;
+  
+                  public class MainActivity extends AppCompatActivity {
+                      EditText etFacultyId, etNoOfStudents, etDate, etSearchDate, etSearchCourse;
+                      AutoCompleteTextView actvCourseName;
+                      Button btnSubmit, btnShowAttendance;
+                      DBHelper dbHelper;
+  
+                      @Override
+                      protected void onCreate(Bundle savedInstanceState) {
+                          super.onCreate(savedInstanceState);
+                          setContentView(R.layout.activity_main);
+                          etFacultyId = findViewById(R.id.etFacultyId);
+                          actvCourseName = findViewById(R.id.actvCourseName);
+                          etNoOfStudents = findViewById(R.id.etNoOfStudents);
+                          etDate = findViewById(R.id.etDate);
+                          etSearchDate = findViewById(R.id.etSearchDate);
+                          etSearchCourse = findViewById(R.id.etSearchCourse);
+                          btnSubmit = findViewById(R.id.btnSubmit);
+                          btnShowAttendance = findViewById(R.id.btnShowAttendance);
+                          dbHelper = new DBHelper(this);
+                          String[] courses = {"Mathematics", "Physics", "Chemistry", "Computer Science", "English"};
+                          ArrayAdapter&lt;String&gt; adapter = new ArrayAdapter&lt;&gt;(this, android.R.layout.simple_dropdown_item_1line, courses);
+                          actvCourseName.setAdapter(adapter);
+                          etDate.setOnClickListener(v -> showDatePicker(etDate));
+                          etSearchDate.setOnClickListener(v -> showDatePicker(etSearchDate));
+                          btnSubmit.setOnClickListener(v -> {
+                              String id = etFacultyId.getText().toString();
+                              String course = actvCourseName.getText().toString();
+                              String students = etNoOfStudents.getText().toString();
+                              String date = etDate.getText().toString();
+                              if (id.isEmpty() || course.isEmpty() || students.isEmpty() || date.isEmpty()) {
+                                  Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
+                                  return;
+                              }
+                              boolean isInserted = dbHelper.insertAttendance(id, course, Integer.parseInt(students), date);
+                              if (isInserted) {
+                                  Toast.makeText(this, "Attendance Submitted", Toast.LENGTH_SHORT).show();
+                                  clearFields();
+                              } else {
+                                  Toast.makeText(this, "Error submitting attendance", Toast.LENGTH_SHORT).show();
+                              }
+                          });
+                          btnShowAttendance.setOnClickListener(v -> {
+                              String searchDate = etSearchDate.getText().toString();
+                              String searchCourse = etSearchCourse.getText().toString();
+                              if (searchDate.isEmpty() || searchCourse
+  .isEmpty()) {
+                                  Toast.makeText(this, "Please select date and course name", Toast.LENGTH_SHORT).show();
+                                  return;
+                              }
+                              Intent intent = new Intent(MainActivity.this, ResultActivity.class);
+                              intent.putExtra("searchDate", searchDate);
+                              intent.putExtra("searchCourse", searchCourse);
+                              startActivity(intent);
+                          });
+                      }
+  
+                      private void showDatePicker(EditText editText) {
+                          Calendar calendar = Calendar.getInstance();
+                          int year = calendar.get(Calendar.YEAR);
+                          int month = calendar.get(Calendar.MONTH);
+                          int day = calendar.get(Calendar.DAY_OF_MONTH);
+                          DatePickerDialog datePickerDialog = new DatePickerDialog(this, (view, year1, month1, dayOfMonth) -> {
+                              editText.setText(dayOfMonth + "/" + (month1 + 1) + "/" + year1);
+                          }, year, month, day);
+                          datePickerDialog.show();
+                      }
+  
+                      private void clearFields() {
+                          etFacultyId.setText("");
+                          actvCourseName.setText("");
+                          etNoOfStudents.setText("");
+                          etDate.setText("");
+                          etSearchDate.setText("");
+                          etSearchCourse.setText("");
+                      }
+                  }
+              </code>
+              <h3>ResultActivity.java</h3>
+              <button onclick="copyToClipboard('attendanceResultActivity')">Copy</button>
+              <code id="attendanceResultActivity" class="language-java">
+                  package com.example.end3;
+                  import android.database.Cursor;
+                  import android.os.Bundle;
+                  import android.widget.TextView;
+                  import androidx.appcompat.app.AppCompatActivity;
+  
+                  public class ResultActivity extends AppCompatActivity {
+                      TextView tvResult;
+                      DBHelper dbHelper;
+  
+                      @Override
+                      protected void onCreate(Bundle savedInstanceState) {
+                          super.onCreate(savedInstanceState);
+                          setContentView(R.layout.activity_result);
+                          tvResult = findViewById(R.id.tvResult);
+                          dbHelper = new DBHelper(this);
+                          String searchDate = getIntent().getStringExtra("searchDate");
+                          String searchCourse = getIntent().getStringExtra("searchCourse");
+                          Cursor cursor = dbHelper.getAttendanceByDateAndCourse(searchDate, searchCourse);
+                          displayResults(cursor);
+                      }
+  
+                      private void displayResults(Cursor cursor) {
+                          StringBuilder builder = new StringBuilder();
+                          if (cursor.moveToFirst()) {
+                              do {
+                                  builder.append("ID: ").append(cursor.getString(0))
+                                      .append(", Course: ").append(cursor.getString(1))
+                                      .append(", Students: ").append(cursor.getInt(2))
+                                      .append(", Date: ").append(cursor.getString(3)).append("\n");
+                              } while (cursor.moveToNext());
+                              tvResult.setText(builder.toString());
+                          } else {
+                              tvResult.setText("No records found for the selected date and course.");
+                          }
+                      }
+                  }
+              </code>
+              <h3>DBHelper.java</h3>
+              <button onclick="copyToClipboard('attendanceDBHelper')">Copy</button>
+              <code id="attendanceDBHelper" class="language-java">
+                  package com.example.end3;
+                  import android.content.ContentValues;
+                  import android.content.Context;
+                  import android.database.Cursor;
+                  import android.database.sqlite.SQLiteDatabase;
+                  import android.database.sqlite.SQLiteOpenHelper;
+  
+                  public class DBHelper extends SQLiteOpenHelper {
+                      private static final String DATABASE_NAME = "AttendanceDB.db";
+                      private static final int DATABASE_VERSION = 1;
+  
+                      public DBHelper(Context context) {
+                          super(context, DATABASE_NAME, null, DATABASE_VERSION);
+                      }
+  
+                      @Override
+                      public void onCreate(SQLiteDatabase db) {
+                          String createTable = "CREATE TABLE Attendance (" +
+                              "faculty_id TEXT, " +
+                              "course_name TEXT, " +
+                              "no_of_students INTEGER, " +
+                              "date TEXT)";
+                          db.execSQL(createTable);
+                      }
+  
+                      @Override
+                      public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+                          db.execSQL("DROP TABLE IF EXISTS Attendance");
+                          onCreate(db);
+                      }
+  
+                      public boolean insertAttendance(String facultyId, String courseName, int noOfStudents, String date) {
+                          SQLiteDatabase db = this.getWritableDatabase();
+                          ContentValues values = new ContentValues();
+                          values.put("faculty_id", facultyId);
+                          values.put("course_name", courseName);
+                          values.put("no_of_students", noOfStudents);
+                          values.put("date", date);
+                          long result = db.insert("Attendance", null, values);
+                          return result != -1;
+                      }
+  
+                      public Cursor getAttendanceByDate(String date) {
+                          SQLiteDatabase db = this.getReadableDatabase();
+                          return db.rawQuery("SELECT * FROM Attendance WHERE date = ?", new String[]{date});
+                      }
+  
+                      public Cursor getAttendanceByDate 
+                      public Cursor getAttendanceByDateAndCourse(String date, String course) {
+                          SQLiteDatabase db = this.getReadableDatabase();
+                          return db.rawQuery("SELECT * FROM Attendance WHERE date = ? AND course_name = ?", new String[]{date, course});
+                      }
+                  }
+                  </code>
+                  <h3>Output</h3>
+                  <img src="./Images/attendance.jpg"> <img src="./Images/attendanceres.jpg">
+                  </pre>
+    </div>
+  </div>
+
+  <div class="program">
+    <div class="header" onclick="toggleProgram(this)">
+      <span class="arrow">▶</span> Admission Department App
+    </div>
+    <div class="content">
+      <pre>
+              <h3>Activity_main.xml</h3>
+              <button onclick="copyToClipboard('activityMainXmla')">Copy</button>
+              <code id="activityMainXmla" class="language-xml">
+                  &lt;?xml version="1.0" encoding="utf-8"?&gt;
+                  &lt;androidx.constraintlayout.widget.ConstraintLayout
+                      xmlns:android="http://schemas.android.com/apk/res/android"
+                      xmlns:app="http://schemas.android.com/apk/res-auto"
+                      android:layout_width="match_parent"
+                      android:layout_height="match_parent"
+                      android:padding="16dp"&gt;
+                      &lt;EditText
+                          android:id="@+id/etRegNo"
+                          android:layout_width="0dp"
+                          android:layout_height="wrap_content"
+                          android:hint="Registration Number"
+                          app:layout_constraintTop_toTopOf="parent"
+                          app:layout_constraintStart_toStartOf="parent"
+                          app:layout_constraintEnd_toEndOf="parent" /&gt;
+                      &lt;EditText
+                          android:id="@+id/etName"
+                          android:layout_width="0dp"
+                          android:layout_height="wrap_content"
+                          android:hint="Name"
+                          app:layout_constraintTop_toBottomOf="@id/etRegNo"
+                          app:layout_constraintStart_toStartOf="parent"
+                          app:layout_constraintEnd_toEndOf="parent" /&gt;
+                      &lt;EditText
+                          android:id="@+id/etBoard"
+                          android:layout_width="0dp"
+                          android:layout_height="wrap_content"
+                          android:hint="Board"
+                          app:layout_constraintTop_toBottomOf="@id/etName"
+                          app:layout_constraintStart_toStartOf="parent"
+                          app:layout_constraintEnd_toEndOf="parent" /&gt;
+                      &lt;EditText
+                          android:id="@+id/etPhysics"
+                          android:layout_width="0dp"
+                          android:layout_height="wrap_content"
+                          android:hint="Marks in Physics"
+                          android:inputType="number"
+                          app:layout_constraintTop_toBottomOf="@id/etBoard"
+                          app:layout_constraintStart_toStartOf="parent"
+                          app:layout_constraintEnd_toEndOf="parent" /&gt;
+                      &lt;EditText
+                          android:id="@+id/etChemistry"
+                          android:layout_width="0dp"
+                          android:layout_height="wrap_content"
+                          android:hint="Marks in Chemistry"
+                          android:inputType="number"
+                          app:layout_constraintTop_toBottomOf="@id/etPhysics"
+                          app:layout_constraintStart_toStartOf="parent"
+                          app:layout_constraintEnd_toEndOf="parent" /&gt;
+                      &lt;EditText
+                          android:id="@+id/etMathematics"
+                          android:layout_width="0dp"
+                          android:layout_height="wrap_content"
+                          android:hint="Marks in Mathematics"
+                          android:inputType="number"
+                          app:layout_constraintTop_toBottomOf="@id/etChemistry"
+                          app:layout_constraintStart_toStartOf="parent"
+                          app:layout_constraintEnd_toEndOf="parent" /&gt;
+                      &lt;Button
+                          android:id="@+id/btnCheck"
+                          android:layout_width="0dp"
+                          android:layout_height="wrap_content"
+                          android:layout_marginTop="56dp"
+                          android:text="Check Eligibility"
+                          app:layout_constraintEnd_toEndOf="parent"
+                          app:layout_constraintHorizontal_bias="1.0"
+                          app:layout_constraintStart_toStartOf="parent"
+                          app:layout_constraintTop_toBottomOf="@id/etMathematics" /&gt;
+                      &lt;TextView
+                          android:id="@+id/tvResult"
+                          android:layout_width="0dp"
+                          android:layout_height="wrap_content"
+                          android:text=""
+                          android:textSize="18sp"
+                          android:gravity="center"
+                          android:textColor="#000000"
+                          app:layout_constraintTop_toBottomOf="@id/btnCheck"
+                          app:layout_constraintStart_toStartOf="parent"
+                          app:layout_constraintEnd_toEndOf="parent"
+                          app:layout_constraintBottom_toBottomOf="parent"
+                          android:layout_marginTop="16dp" /&gt;
+                  &lt;/androidx.constraintlayout.widget.ConstraintLayout&gt;
+              </code>
+   <h3>MainActivity.java</h3>
+              <button onclick="copyToClipboard('mainActivityzz')">Copy</button>
+              <code id="mainActivityzz" class="language-java">
+                  package com.example.ques4;
+                  import android.os.Bundle;
+                  import android.view.View;
+                  import android.widget.Button;
+                  import android.widget.EditText;
+                  import android.widget.TextView;
+                  import androidx.appcompat.app.AppCompatActivity;
+  
+                  public class MainActivity extends AppCompatActivity {
+                      private EditText etRegNo, etName, etBoard, etPhysics, etChemistry, etMathematics;
+                      private Button btnCheck;
+                      private TextView tvResult;
+  
+                      @Override
+                      protected void onCreate(Bundle savedInstanceState) {
+                          super.onCreate(savedInstanceState);
+                          setContentView(R.layout.activity_main);
+                          etRegNo = findViewById(R.id.etRegNo);
+                          etName = findViewById(R.id.etName);
+                          etBoard = findViewById(R.id.etBoard);
+                          etPhysics = findViewById(R.id.etPhysics);
+                          etChemistry = findViewById(R.id.etChemistry);
+                          etMathematics = findViewById(R.id.etMathematics);
+                          btnCheck = findViewById(R.id.btnCheck);
+                          tvResult = findViewById(R.id.tvResult);
+  
+                          btnCheck.setOnClickListener(new View.OnClickListener() {
+                              @Override
+                              public void onClick(View v) {
+                                  checkEligibility();
+                              }
+                          });
+                      }
+  
+                      private void checkEligibility() {
+                        // Fetching marks
+                        String physics = etPhysics.getText().toString();
+                        String chemistry = etChemistry.getText().toString();
+                        String mathematics = etMathematics.getText().toString();
+                        if (!physics.isEmpty() && !chemistry.isEmpty() && !mathematics.isEmpty()) {
+                        // Calculate average
+                        double p = Double.parseDouble(physics);
+                        double c = Double.parseDouble(chemistry);
+                        double m = Double.parseDouble(mathematics);
+                        double average = (p + c + m) / 3;
+                        // Check eligibility
+                        if (average > 60) {
+                        tvResult.setText("You are eligible for admission");
+                        } else {
+                        tvResult.setText("You are not eligible for admission");
+                        }
+                        } else {
+                        tvResult.setText("Please enter all marks");
+                        }
+                        }
+                  }
+              </code>
+              <h3>Output</h3>
+              <img src="./Images/admission.jpg"> <img src="./Images/admissionres.jpg">
+          </pre>
+    </div>
+  </div>
+
+  <div class="program">
+    <div class="header" onclick="toggleProgram(this)">
+      <span class="arrow">▶</span> Railway Booking App
+    </div>
+    <div class="content">
+      <pre>
+              <h3>Activity_main.xml</h3>
+              <button onclick="copyToClipboard('ggbro')">Copy</button>
+              <code id="ggbro" class="language-xml">
+                &lt;?xml version="1.0" encoding="utf-8"?&gt;
+                  &lt;LinearLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;
+                  android:layout_width=&quot;match_parent&quot;
+                  android:layout_height=&quot;match_parent&quot;
+                  android:orientation=&quot;vertical&quot;
+                  android:padding=&quot;16dp&quot;&gt;
+                  &lt;EditText
+                  android:id=&quot;@+id/name&quot;
+                  android:layout_width=&quot;match_parent&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:hint=&quot;Enter Name&quot; /&gt;
+                  &lt;EditText
+                  android:id=&quot;@+id/phoneNumber&quot;
+                  android:layout_width=&quot;match_parent&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:hint=&quot;Enter Phone Number&quot; /&gt;
+                  &lt;EditText
+                  android:id=&quot;@+id/email&quot;
+                  android:layout_width=&quot;match_parent&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:hint=&quot;Enter Email ID&quot; /&gt;
+                  &lt;RadioGroup
+                  android:id=&quot;@+id/destinationRadioGroup&quot;
+                  android:layout_width=&quot;match_parent&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:orientation=&quot;vertical&quot;&gt;
+                  &lt;RadioButton
+                  android:id=&quot;@+id/destinationBangalore&quot;
+                  android:layout_width=&quot;wrap_content&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:text=&quot;Bangalore&quot; /&gt;
+                  &lt;RadioButton
+                  android:id=&quot;@+id/destinationMysore&quot;
+                  android:layout_width=&quot;wrap_content&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:text=&quot;Mysore&quot; /&gt;
+                  &lt;RadioButton
+                  android:id=&quot;@+id/destinationChennai&quot;
+                  android:layout_width=&quot;wrap_content&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:text=&quot;Chennai&quot; /&gt;
+                  &lt;/RadioGroup&gt;
+                  &lt;DatePicker
+                  android:id=&quot;@+id/datePicker&quot;
+                  android:layout_width=&quot;match_parent&quot;
+                  android:layout_height=&quot;wrap_content&quot; /&gt;
+                  &lt;Button
+                  android:id=&quot;@+id/submitButton&quot;
+                  android:layout_width=&quot;wrap_content&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:text=&quot;Submit&quot; /&gt;
+                  &lt;/LinearLayout&gt;
+              </code>
+              <h3>MainActivity.java</h3>
+              <button onclick="copyToClipboard('g')">Copy</button>
+              <code id="g" class="language-java">
+                  package com.example.railwaybooking;
+                  import android.content.Intent;
+                  import android.os.Bundle;
+                  import android.view.View;
+                  import android.widget.Button;
+                  import android.widget.EditText;
+                  import android.widget.RadioButton;
+                  import android.widget.RadioGroup;
+                  import android.widget.DatePicker;
+                  import androidx.appcompat.app.AppCompatActivity;
+                  public class MainActivity extends AppCompatActivity {
+                      EditText name, phoneNumber, email;
+                      RadioGroup destinationRadioGroup;
+                      DatePicker datePicker;
+                      Button submitButton;
+                      @Override
+                      protected void onCreate(Bundle savedInstanceState) {
+                          super.onCreate(savedInstanceState);
+                          setContentView(R.layout.activity_main);
+                          name = findViewById(R.id.name);
+                          phoneNumber = findViewById(R.id.phoneNumber);
+                          email = findViewById(R.id.email);
+                          destinationRadioGroup = findViewById(R.id.destinationRadioGroup);
+                          datePicker = findViewById(R.id.datePicker);
+                          submitButton = findViewById(R.id.submitButton);
+                          submitButton.setOnClickListener(new View.OnClickListener() {
+                              @Override
+                              public void onClick(View v) {
+                                  Intent intent = new Intent(MainActivity.this, TravelDetailsActivity .class);
+                                  intent.putExtra("NAME", name.getText().toString());
+                                  intent.putExtra("PHONE", phoneNumber.getText().toString());
+                                  intent.putExtra("EMAIL", email.getText().toString());
+                                  intent.putExtra("DESTINATION", ((RadioButton) findViewById(destinationRadioGroup.getCheckedRadioButtonId())).getText().toString());
+                                  intent.putExtra("DATE", datePicker.getDayOfMonth() + "/" + (datePicker.getMonth() + 1) + "/" + datePicker.getYear());
+                                  startActivity(intent);
+                              }
+                          });
+                      }
+                  }
+              </code>
+              <h3>activity_travel_details.xml</h3>
+              <button onclick="copyToClipboard('bru')">Copy</button>
+              <code id="bru" class="language-xml">
+                &lt;?xml version="1.0" encoding="utf-8"?&gt;
+                  &lt;LinearLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;
+                  android:layout_width=&quot;match_parent&quot;
+                  android:layout_height=&quot;match_parent&quot;
+                  android:orientation=&quot;vertical&quot;
+                  android:padding=&quot;16dp&quot;&gt;
+                  &lt;RadioGroup
+                  android:id=&quot;@+id/classRadioGroupTravel&quot;
+                  android:layout_width=&quot;match_parent&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:orientation=&quot;horizontal&quot;&gt;
+                  &lt;RadioButton
+                  android:id=&quot;@+id/generalTravelClass&quot;
+                  android:layout_width=&quot;wrap_content&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:text=&quot;General&quot; /&gt;
+                  &lt;RadioButton
+                  android:id=&quot;@+id/sleeperTravelClass&quot;
+                  android:layout_width=&quot;wrap_content&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:text=&quot;Sleeper&quot; /&gt;
+                  &lt;RadioButton
+                  android:id=&quot;@+id/acTravelClass&quot;
+                  android:layout_width=&quot;wrap_content&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:text=&quot;AC&quot; /&gt;
+                  &lt;/RadioGroup&gt;
+                  &lt;EditText
+                  android:id=&quot;@+id/age&quot;
+                  android:layout_width=&quot;match_parent&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:hint=&quot;Enter Age&quot; /&gt;
+                  &lt;Button
+                  android:id=&quot;@+id/calculateButton&quot;
+                  android:layout_width=&quot;wrap_content&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:text=&quot;Calculate&quot; /&gt;
+                  &lt;TextView
+                  android:id=&quot;@+id/ticketDetails&quot;
+                  android:layout_width=&quot;match_parent&quot;
+                  android:layout_height=&quot;wrap_content&quot;
+                  android:text=&quot;Ticket details will appear here&quot; /&gt;
+                  &lt;/LinearLayout&gt;
+              </code>
+              <h3>TravelDetailsActivity.java</h3>
+              <button onclick="copyToClipboard('lmao')">Copy</button>
+              <code id="lmao" class="language-java">
+                  package com.example.railwaybooking;
+                  import android.os.Bundle;
+                  import android.view.View;
+                  import android.widget.Button;
+                  import android.widget.EditText;
+                  import android.widget.RadioButton;
+                  import android.widget.RadioGroup;
+                  import android.widget.TextView;
+                  import androidx.appcompat.app.AppCompatActivity;
+                  public class TravelDetailsActivity extends AppCompatActivity {
+                      RadioGroup classRadioGroupTravel;
+                      EditText age;
+                      Button calculateButton;
+                      TextView ticketDetails;
+                      @Override
+                      protected void onCreate(Bundle savedInstanceState) {
+                          super.onCreate(savedInstanceState);
+                          setContentView(R.layout.activity_travel_details);
+                          classRadioGroupTravel = findViewById(R.id.classRadioGroupTravel);
+                          age = findViewById(R.id.age);
+                          calculateButton = findViewById(R.id.calculateButton);
+                          ticketDetails = findViewById(R.id.ticketDetails);
+                          calculateButton.setOnClickListener(new View.OnClickListener() {
+                              @Override
+                              public void onClick(View v) {
+                                  String selectedClass = ((RadioButton) findViewById(classRadioGroupTravel.getCheckedRadioButtonId())).getText().toString();
+                                  int ageValue = Integer.parseInt(age.getText().toString());
+                                  int distance = getDestinationDistance(getIntent().getStringExtra("DESTINATION"));
+                                  double pricePerKm = getPricePerKm(selectedClass);
+                                  double ticketPrice = calculateTicketPrice(distance, pricePerKm, ageValue);
+                                  String details = "Name: " + getIntent().getStringExtra("NAME") +
+                                  "\nPhone: " + getIntent().getStringExtra("PHONE") +
+                                  "\nEmail: " + getIntent().getStringExtra("EMAIL") +
+                                  "\nDestination: " + getIntent().getStringExtra("DESTINATION") +
+                                  "\nDate: " + getIntent().getStringExtra("DATE") +
+                                  "\nClass: " + selectedClass +
+                                  "\nAge: " + ageValue +
+                                  "\nTicket Price: Rs. " + ticketPrice;
+                                  ticketDetails.setText(details);
+                              }
+                          });
+                      }
+                      private int getDestinationDistance(String destination) {
+                          switch (destination) {
+                              case "Bangalore": return 200;
+                              case "Mysore": return 150;
+                              case "Chennai": return 350;
+                              default: return 0;
+                          }
+                      }
+                      private double getPricePerKm(String selectedClass) {
+                          switch (selectedClass) {
+                              case "General": return 1.5;
+                              case "Sleeper": return 3.0;
+                              case "AC": return 6.0;
+                              default: return 0;
+                          }
+                      }
+                      private double calculateTicketPrice(int distance, double pricePerKm, int age) {
+                          double ticketPrice = distance * pricePerKm;
+                          if (age >= 60) {
+                              ticketPrice /= 2; // 50% discount for senior citizens
+                          }
+                          return ticketPrice;
+                      }
+                  }
+              </code>
+              <h3>Output</h3>
+              <img src="./Images/railway.png">
+          </pre>
+    </div>
+  </div>
+
+  <div class="program">
+    <div class="header" onclick="toggleProgram(this)">
+      <span class="arrow">▶</span> Movie Booking App
+    </div>
+    <div class="content">
+      <pre>
+            <h3>Activity_main.xml</h3>
+            <button onclick="copyToClipboard('xd')">Copy</button>
+            <code id="xd" class="language-xml">
+              &lt;?xml version="1.0" encoding="utf-8"?&gt;
+                &lt;androidx.constraintlayout.widget.ConstraintLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;
+                xmlns:app=&quot;http://schemas.android.com/apk/res-auto&quot;
+                xmlns:tools=&quot;http://schemas.android.com/tools&quot;
+                android:layout_width=&quot;match_parent&quot;
+                android:layout_height=&quot;match_parent&quot;
+                tools:context=&quot;.MainActivity&quot;&gt;
+                &lt;EditText
+                android:id=&quot;@+id/nameEditText&quot;
+                android:layout_width=&quot;0dp&quot;
+                android:layout_height=&quot;wrap_content&quot;
+                android:hint=&quot;Enter your name&quot;
+                android:layout_marginTop=&quot;50dp&quot;
+                android:layout_marginStart=&quot;16dp&quot;
+                android:layout_marginEnd=&quot;16dp&quot;
+                app:layout_constraintTop_toTopOf=&quot;parent&quot;
+                app:layout_constraintStart_toStartOf=&quot;parent&quot;
+                app:layout_constraintEnd_toEndOf=&quot;parent&quot; /&gt;
+                &lt;EditText
+                android:id=&quot;@+id/mobileEditText&quot;
+                android:layout_width=&quot;0dp&quot;
+                android:layout_height=&quot;wrap_content&quot;
+                android:hint=&quot;Enter your mobile number&quot;
+                android:layout_marginTop=&quot;16dp&quot;
+                android:layout_marginStart=&quot;16dp&quot;
+                android:layout_marginEnd=&quot;16dp&quot;
+                app:layout_constraintTop_toBottomOf=&quot;@id/nameEditText&quot;
+                app:layout_constraintStart_toStartOf=&quot;parent&quot;
+                app:layout_constraintEnd_toEndOf=&quot;parent&quot; /&gt;
+                &lt;Spinner
+                android:id=&quot;@+id/movieSpinner&quot;
+                android:layout_width=&quot;0dp&quot;
+                android:layout_height=&quot;wrap_content&quot;
+                android:layout_marginTop=&quot;16dp&quot;
+                app:layout_constraintTop_toBottomOf=&quot;@id/mobileEditText&quot;
+                app:layout_constraintStart_toStartOf=&quot;parent&quot;
+                app:layout_constraintEnd_toEndOf=&quot;parent&quot; /&gt;
+                &lt;Button
+                android:id=&quot;@+id/pickDateButton&quot;
+                android:layout_width=&quot;wrap_content&quot;
+                android:layout_height=&quot;wrap_content&quot;
+                android:text=&quot;Pick a Date&quot;
+                android:layout_marginTop=&quot;16dp&quot;
+                app:layout_constraintTop_toBottomOf=&quot;@id/movieSpinner&quot;
+                app:layout_constraintStart_toStartOf=&quot;parent&quot;
+                app:layout_constraintEnd_toEndOf=&quot;parent&quot; /&gt;
+                &lt;Button
+                android:id=&quot;@+id/submitButton&quot;
+                android:layout_width=&quot;wrap_content&quot;
+                android:layout_height=&quot;wrap_content&quot;
+                android:text=&quot;Submit&quot;
+                android:layout_marginTop=&quot;16dp&quot;
+                app:layout_constraintTop_toBottomOf=&quot;@id/pickDateButton&quot;
+                app:layout_constraintStart_toStartOf=&quot;parent&quot;
+                app:layout_constraintEnd_toEndOf=&quot;parent&quot; /&gt;
+                &lt;TextView
+                android:id=&quot;@+id/resultTextView&quot;
+                android:layout_width=&quot;0dp&quot;
+                android:layout_height=&quot;wrap_content&quot;
+                android:layout_marginTop=&quot;32dp&quot;
+                android:text=&quot;Booking details will appear here&quot;
+                android:textSize=&quot;16sp&quot;
+                android:gravity=&quot;center&quot;
+                app:layout_constraintTop_toBottomOf=&quot;@id/submitButton&quot;
+                app:layout_constraintStart_toStartOf=&quot;parent&quot;
+                app:layout_constraintEnd_toEndOf=&quot;parent&quot; /&gt;
+                &lt;/androidx.constraintlayout.widget.ConstraintLayout&gt;
+            </code>
+            <h3>MainActivity.java</h3>
+            <button onclick="copyToClipboard('lol')">Copy</button>
+            <code id="lol" class="language-java">
+                package com.example.moviebooking;
+                import android.app.DatePickerDialog;
+                import android.os.Bundle;
+                import android.view.View;
+                import android.widget.ArrayAdapter;
+                import android.widget.Button;
+                import android.widget.EditText;
+                import android.widget.Spinner;
+                import android.widget.TextView;
+                import androidx.appcompat.app.AppCompatActivity;
+                import java.util.Calendar;
+                public class MainActivity extends AppCompatActivity {
+                    private EditText nameEditText, mobileEditText;
+                    private Spinner movieSpinner;
+                    private Button pickDateButton, submitButton;
+                    private TextView resultTextView;
+                    private int selectedYear, selectedMonth, selectedDay;
+                    @Override
+                    protected void onCreate(Bundle savedInstanceState) {
+                        super.onCreate(savedInstanceState);
+                        setContentView(R.layout.activity_main);
+                        nameEditText = findViewById(R.id.nameEditText);
+                        mobileEditText = findViewById(R.id.mobileEditText);
+                        movieSpinner = findViewById(R.id.movieSpinner);
+                        pickDateButton = findViewById(R.id.pickDateButton);
+                        submitButton = findViewById(R.id.submitButton);
+                        resultTextView = findViewById(R.id.resultTextView);
+                        // Movie options defined in the Java code
+                        String[] movies = {"Movie 1", "Movie 2", "Movie 3", "Movie 4"};
+                        ArrayAdapter&lt;String&gt; adapter = new ArrayAdapter&lt;&gt;(this, android.R.layout.simple_spinner_item, movies);
+                        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                        movieSpinner.setAdapter(adapter);
+                        // Get current date
+                        Calendar calendar = Calendar.getInstance();
+                        selectedYear = calendar.get(Calendar.YEAR);
+                        selectedMonth = calendar.get(Calendar.MONTH);
+                        selectedDay = calendar.get(Calendar.DAY_OF_MONTH);
+                        // Date picker dialog
+                        pickDateButton.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                DatePickerDialog datePickerDialog = new DatePickerDialog(
+                                    MainActivity.this, (view, year, month, dayOfMonth) -> {
+                                        selectedYear = year;
+                                        selectedMonth = month;
+                                        selectedDay = dayOfMonth;
+                                    }, selectedYear, selectedMonth, selectedDay
+                                );
+                                datePickerDialog.show();
+                            }
+                        });
+                        // Submit button action
+                        submitButton.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                String name = nameEditText.getText().toString();
+                                String mobile = mobileEditText.getText().toString();
+                                String movie = movieSpinner.getSelectedItem().toString();
+                                String selectedDate = selectedDay + "/" + (selectedMonth + 1) + "/" + selectedYear;
+                                String bookingDetails = "Name: " + name + "\nMobile: " + mobile +
+                                "\nMovie: " + movie + "\nDate: " + selectedDate;
+                                resultTextView.setText(bookingDetails);
+                            }
+                        });
+                    }
+                }
+            </code>
+            <h3>Output</h3>
+            <img src="Images/movie.png">
+        </pre>
+    </div>
+  </div>
+
+  <div class="program">
+    <div class="header" onclick="toggleProgram(this)">
+        <span class="arrow">▶</span> End-term Eligibility App
+    </div>
+    <div class="content">
+        <pre>
+            <h3>Activity_main.xml</h3>
+            <button onclick="copyToClipboard('activityMainXmlx')">Copy</button>
+            <code id="activityMainXmlx" class="language-xml">
+              &lt;?xml version="1.0" encoding="utf-8"?&gt;
+                &lt;LinearLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;
+                android:layout_width=&quot;match_parent&quot;
+                android:layout_height=&quot;match_parent&quot;
+                android:orientation=&quot;vertical&quot;
+                android:padding=&quot;16dp&quot;&gt;
+                &lt;EditText
+                android:id=&quot;@+id/test1Marks&quot;
+                android:layout_width=&quot;match_parent&quot;
+                android:layout_height=&quot;wrap_content&quot;
+                android:hint=&quot;Enter Test 1 Marks&quot;
+                android:inputType=&quot;number&quot; /&gt;
+                &lt;EditText
+                android:id=&quot;@+id/test2Marks&quot;
+                android:layout_width=&quot;match_parent&quot;
+                android:layout_height=&quot;wrap_content&quot;
+                android:hint=&quot;Enter Test 2 Marks&quot;
+                android:inputType=&quot;number&quot; /&gt;
+                &lt;Button
+                android:layout_width=&quot;wrap_content&quot;
+                android:layout_height=&quot;wrap_content&quot;
+                android:onClick=&quot;saveMarks&quot;
+                android:text=&quot;Save Marks&quot;
+                android:layout_gravity=&quot;center&quot; /&gt;
+                &lt;/LinearLayout&gt;
+            </code>
+            <h3>MainActivity.java</h3>
+            <button onclick="copyToClipboard('mainActivityy')">Copy</button>
+            <code id="mainActivityy" class="language-java">
+                package com.example.endtermeligibility;
+                import android.content.Intent;
+                import android.content.SharedPreferences;
+                import android.os.Bundle;
+                import android.view.View;
+                import android.widget.EditText;
+                import android.widget.Toast;
+                import androidx.appcompat.app.AppCompatActivity;
+                public class MainActivity extends AppCompatActivity {
+                    private EditText test1Marks, test2Marks;
+                    @Override
+                    protected void onCreate(Bundle savedInstanceState) {
+                        super.onCreate(savedInstanceState);
+                        setContentView(R.layout.activity_main);
+                        test1Marks = findViewById(R.id.test1Marks);
+                        test2Marks = findViewById(R.id.test2Marks);
+                    }
+                    public void saveMarks(View view) {
+                        String test1 = test1Marks.getText().toString();
+                        String test2 = test2Marks.getText().toString();
+                        if (test1.isEmpty() || test2.isEmpty()) {
+                            Toast.makeText(this, &quot;Please enter marks for both tests&quot;, Toast.LENGTH_SHORT).show();
+                        } else {
+                            SharedPreferences sharedPreferences = getSharedPreferences(&quot;StudentMarks&quot;, MODE_PRIVATE);
+                            SharedPreferences.Editor editor = sharedPreferences.edit();
+                            editor.putInt(&quot;Test1&quot;, Integer.parseInt(test1));
+                            editor.putInt(&quot;Test2&quot;, Integer.parseInt(test2));
+                            editor.apply();
+                            Toast.makeText(this, &quot;Marks saved successfully!&quot;, Toast.LENGTH_SHORT).show();
+                            Intent intent = new Intent(MainActivity.this, EligibilityActivity.class);
+                            startActivity(intent);
+                        }
+                    }
+                }
+            </code>
+            <h3>activity_eligibility.xml</h3>
+            <button onclick="copyToClipboard('activityEligibilityXml')">Copy</button>
+            <code id="activityEligibilityXml" class="language-xml">
+              &lt;?xml version="1.0" encoding="utf-8"?&gt;
+                &lt;LinearLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;
+                android:layout_width=&quot;match_parent&quot;
+                android:layout_height=&quot;match_parent&quot;
+                android:orientation=&quot;vertical&quot;
+                android:padding=&quot;16dp&quot;&gt;
+                &lt;TextView
+                android:id=&quot;@+id/test1TextView&quot;
+                android:layout_width=&quot;match_parent&quot;
+                android:layout_height=&quot;wrap_content&quot;
+                android:text=&quot;Test 1 Marks:&quot;
+                android:textSize=&quot;18sp&quot; /&gt;
+                &lt;TextView
+                android:id=&quot;@+id/test2TextView&quot;
+                android:layout_width=&quot;match_parent&quot;
+                android:layout_height
+                &quot;wrap_content&quot;
+                android:text=&quot;Test 2 Marks:&quot;
+                android:textSize=&quot;18sp&quot; /&gt;
+                &lt;TextView
+                android:id=&quot;@+id/eligibilityTextView&quot;
+                android:layout_width=&quot;match_parent&quot;
+                android:layout_height=&quot;wrap_content&quot;
+                android:text=&quot;Eligibility Status:&quot;
+                android:textSize=&quot;18sp&quot; /&gt;
+                &lt;/LinearLayout&gt;
+            </code>
+            <h3>EligibilityActivity.java</h3>
+            <button onclick="copyToClipboard('eligibilityActivity')">Copy</button>
+            <code id="eligibilityActivity" class="language-java">
+                package com.example.endtermeligibility;
+                import android.content.SharedPreferences;
+                import android.os.Bundle;
+                import android.widget.TextView;
+                import androidx.appcompat.app.AppCompatActivity;
+                public class EligibilityActivity extends AppCompatActivity {
+                    private TextView test1TextView, test2TextView, eligibilityTextView;
+                    @Override
+                    protected void onCreate(Bundle savedInstanceState) {
+                        super.onCreate(savedInstanceState);
+                        setContentView(R.layout.activity_eligibility);
+                        test1TextView = findViewById(R.id.test1TextView);
+                        test2TextView = findViewById(R.id.test2TextView);
+                        eligibilityTextView = findViewById(R.id.eligibilityTextView);
+                        SharedPreferences sharedPreferences = getSharedPreferences(&quot;StudentMarks&quot;, MODE_PRIVATE);
+                        int test1 = sharedPreferences.getInt(&quot;Test1&quot;, -1);
+                        int test2 = sharedPreferences.getInt(&quot;Test2&quot;, -1);
+                        if (test1 == -1 || test2 == -1) {
+                            eligibilityTextView.setText(&quot;Marks not available.&quot;);
+                        } else {
+                            test1TextView.setText(&quot;Test 1 Marks: &quot; + test1);
+                            test2TextView.setText(&quot;Test 2 Marks: &quot; + test2);
+                            if (test1 >= 40 && test2 >= 40) {
+                                eligibilityTextView.setText(&quot;Eligible for End-Term.&quot;);
+                            } else {
+                                eligibilityTextView.setText(&quot;Not Eligible for End-Term.&quot;);
+                            }
+                        }
+                    }
+                }
+            </code>
+            <h3>Output</h3>
+            <img src="images/endterm.png">
+        </pre>
+    </div>
+</div>
+
+</body>
+
+</html>
